@@ -60,6 +60,17 @@ const BookAppointment = () => {
 
   const timeSlots = generateTimeSlots();
 
+  // Helper function to convert any fee format to a clean number and ensure it displays in Indian Rupees
+  const getFeeAmount = (feeString) => {
+    // Extract numeric value regardless of currency symbol
+    const numericValue = parseInt(feeString.replace(/[^0-9]/g, ''));
+    return numericValue;
+  };
+
+  const formatToRupees = (amount) => {
+    return `₹${amount}`;
+  };
+
   const handleBookAppointment = async () => {
     if (!selectedTime) {
       toast({
@@ -102,7 +113,7 @@ const BookAppointment = () => {
       appointmentDate.setHours(hour, parseInt(minutes));
 
       // Get fee amount from doctor data
-      const feeAmount = parseInt(doctor.fee.replace(/[^0-9]/g, ''));
+      const feeAmount = getFeeAmount(doctor.fee);
       
       if (paymentMethod === 'razorpay') {
         await processRazorpayPayment(feeAmount, appointmentDate);
@@ -183,7 +194,7 @@ const BookAppointment = () => {
       payment_status: paymentId ? 'paid' : 'pending',
       payment_id: paymentId,
       consultation_type: consultationType,
-      fee_amount: parseInt(doctor.fee.replace(/[^0-9]/g, ''))
+      fee_amount: getFeeAmount(doctor.fee)
     });
 
     if (error) throw error;
@@ -248,6 +259,11 @@ const BookAppointment = () => {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
+  // Calculate fees for different consultation types
+  const inPersonFee = getFeeAmount(doctor.fee);
+  const videoFee = Math.round(inPersonFee * 0.85); // Video is 15% cheaper than in-person
+  const chatFee = Math.round(inPersonFee * 0.7);   // Chat is 30% cheaper than in-person
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
@@ -307,7 +323,7 @@ const BookAppointment = () => {
                     <TabsContent value="in-person" className="mt-4">
                       <div className="flex justify-between items-center">
                         <div>
-                          <span className="font-medium block">{doctor.fee}</span>
+                          <span className="font-medium block">{formatToRupees(inPersonFee)}</span>
                           <span className="text-sm text-gray-500">Consultation Fee</span>
                         </div>
                         <div className="flex items-center text-sm text-blue-600">
@@ -319,7 +335,7 @@ const BookAppointment = () => {
                     <TabsContent value="video" className="mt-4">
                       <div className="flex justify-between items-center">
                         <div>
-                          <span className="font-medium block">${parseInt(doctor.fee.substring(1)) - 30}</span>
+                          <span className="font-medium block">{formatToRupees(videoFee)}</span>
                           <span className="text-sm text-gray-500">Video Consultation</span>
                         </div>
                         <div className="flex items-center text-sm text-blue-600">
@@ -338,7 +354,7 @@ const BookAppointment = () => {
                     <TabsContent value="chat" className="mt-4">
                       <div className="flex justify-between items-center">
                         <div>
-                          <span className="font-medium block">${parseInt(doctor.fee.substring(1)) - 50}</span>
+                          <span className="font-medium block">{formatToRupees(chatFee)}</span>
                           <span className="text-sm text-gray-500">Chat Consultation</span>
                         </div>
                         <div className="flex items-center text-sm text-blue-600">
@@ -459,10 +475,10 @@ const BookAppointment = () => {
                 <span className="font-medium">Total Amount</span>
                 <span className="font-bold text-lg">
                   {consultationType === 'in-person' 
-                    ? doctor.fee 
+                    ? formatToRupees(inPersonFee) 
                     : consultationType === 'video' 
-                      ? `$${parseInt(doctor.fee.substring(1)) - 30}` 
-                      : `$${parseInt(doctor.fee.substring(1)) - 50}`}
+                      ? formatToRupees(videoFee)
+                      : formatToRupees(chatFee)}
                 </span>
               </div>
             </div>
