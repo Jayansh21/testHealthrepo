@@ -95,14 +95,15 @@ const SignInDialog = ({ isOpen, onClose, onOpenSignUp, userType = 'patient' }: S
     setIsGoogleLoading(true);
 
     try {
-      const baseUrl = window.location.origin;
+      // Get the current site URL to use as the redirect URL
+      const redirectUrl = `${window.location.origin}/auth/callback`;
       
-      console.log("Starting Google sign-in, will redirect to:", `${baseUrl}/auth/callback`);
+      console.log("Starting Google sign-in, will redirect to:", redirectUrl);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${baseUrl}/auth/callback`,
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

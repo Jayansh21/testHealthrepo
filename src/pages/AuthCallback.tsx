@@ -11,7 +11,6 @@ const AuthCallback = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // This component will handle the auth callback from OAuth providers
     const handleAuthCallback = async () => {
       try {
         setIsProcessing(true);
@@ -24,10 +23,18 @@ const AuthCallback = () => {
         if (hashFragment && hashFragment.includes('access_token')) {
           console.log("Access token found in hash fragment, setting session from URL");
           
+          // Extract tokens from the hash
+          const accessToken = new URLSearchParams(hashFragment.substring(1)).get('access_token');
+          const refreshToken = new URLSearchParams(hashFragment.substring(1)).get('refresh_token');
+          
+          if (!accessToken) {
+            throw new Error("No access token found in URL");
+          }
+          
           // The hash contains auth info, we need to let Supabase process it
           const { data, error: setSessionError } = await supabase.auth.setSession({
-            access_token: new URLSearchParams(hashFragment.substring(1)).get('access_token') || '',
-            refresh_token: new URLSearchParams(hashFragment.substring(1)).get('refresh_token') || '',
+            access_token: accessToken,
+            refresh_token: refreshToken || '',
           });
           
           if (setSessionError) {
@@ -60,10 +67,20 @@ const AuthCallback = () => {
               console.error("Exception when creating MongoDB user:", mongoError);
               // Don't throw here, we still want to proceed with the login
             }
+            
+            // Successful login
+            toast({
+              title: "Successfully signed in",
+              description: `Welcome to HealthHub, ${data.session.user.user_metadata.full_name || ''}!`,
+            });
+            setIsProcessing(false);
+            navigate('/home');
+            return;
           }
         }
         
-        // Now check if we have a valid session
+        // If we're here, we didn't find tokens in the URL or couldn't set the session
+        // Try to get the session another way
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
