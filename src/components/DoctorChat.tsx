@@ -4,6 +4,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@
 import { Button } from '@/components/ui/button';
 import { X, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
   id: number;
@@ -26,10 +27,11 @@ const DoctorChat = ({ doctorName, doctorImage, open, onOpenChange }: DoctorChatP
     {
       id: 1,
       sender: 'doctor',
-      text: `Hello! This is ${doctorName}. How can I help you today?`,
+      text: `Hello! I'm Dr. ${doctorName}. How can I help with your health concern today?`,
       timestamp: new Date(Date.now() - 60000),
     },
   ]);
+  const [isLoading, setIsLoading] = useState(false);
   
   const messageEndRef = useRef<HTMLDivElement>(null);
 
@@ -38,7 +40,7 @@ const DoctorChat = ({ doctorName, doctorImage, open, onOpenChange }: DoctorChatP
     messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!message.trim()) return;
     
     // Add user message
@@ -51,26 +53,55 @@ const DoctorChat = ({ doctorName, doctorImage, open, onOpenChange }: DoctorChatP
     
     setMessages(prev => [...prev, userMessage]);
     setMessage('');
+    setIsLoading(true);
     
-    // Simulate doctor response after a delay
-    setTimeout(() => {
-      const responses = [
-        "I understand your concern. Let me check your records.",
-        "That's a good question. Based on your symptoms, I recommend...",
-        "Please provide more details about your symptoms.",
-        "Have you taken the medication I prescribed?",
-        "Your test results look normal, but we should monitor this.",
-      ];
+    try {
+      // Extract previous messages for context (limit to last 5 for relevance)
+      const previousMessages = messages.slice(-5).map(msg => ({
+        role: msg.sender === 'doctor' ? 'bot' : 'user',
+        content: msg.text
+      }));
       
+      // Call the Supabase Edge Function for AI response
+      const { data, error } = await supabase.functions.invoke('gemini-health-chat', {
+        body: { 
+          prompt: message,
+          previousMessages
+        }
+      });
+      
+      if (error) throw new Error('Failed to get response');
+      
+      // Add doctor response
       const doctorMessage: Message = {
         id: messages.length + 2,
         sender: 'doctor',
-        text: responses[Math.floor(Math.random() * responses.length)],
+        text: data.generatedText || "I can only discuss health matters. How can I help with your medical concern?",
         timestamp: new Date(),
       };
       
       setMessages(prev => [...prev, doctorMessage]);
-    }, 1500);
+      
+    } catch (error) {
+      console.error('Error getting response:', error);
+      toast({
+        title: "Communication Error",
+        description: "Couldn't reach doctor. Please try again.",
+        variant: "destructive",
+      });
+      
+      // Add fallback message
+      const errorMessage: Message = {
+        id: messages.length + 2,
+        sender: 'doctor',
+        text: "I apologize, but I'm having trouble connecting. Please try again or contact the clinic directly.",
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const formatTime = (date: Date) => {
@@ -112,7 +143,7 @@ const DoctorChat = ({ doctorName, doctorImage, open, onOpenChange }: DoctorChatP
                     : 'bg-gray-100 text-gray-800'
                 }`}
               >
-                <p>{msg.text}</p>
+                <p className="whitespace-pre-line">{msg.text}</p>
                 <p className={`text-xs mt-1 ${
                   msg.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
                 }`}>
@@ -121,6 +152,17 @@ const DoctorChat = ({ doctorName, doctorImage, open, onOpenChange }: DoctorChatP
               </div>
             </div>
           ))}
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="max-w-[80%] rounded-lg px-4 py-2 bg-gray-100">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse"></div>
+                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse delay-150"></div>
+                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse delay-300"></div>
+                </div>
+              </div>
+            </div>
+          )}
           <div ref={messageEndRef} />
         </div>
         
@@ -132,11 +174,13 @@ const DoctorChat = ({ doctorName, doctorImage, open, onOpenChange }: DoctorChatP
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder="Type your message..."
+              placeholder="Type your medical question..."
               className="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-health-primary"
+              disabled={isLoading}
             />
             <Button 
-              onClick={handleSendMessage} 
+              onClick={handleSendMessage}
+              disabled={isLoading || !message.trim()}
               className="rounded-full bg-health-primary hover:bg-health-primary/90"
             >
               <Send className="h-4 w-4" />
