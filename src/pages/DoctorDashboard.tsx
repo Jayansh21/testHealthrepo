@@ -167,193 +167,191 @@ const DoctorDashboard = () => {
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Doctor Dashboard</h1>
-            <p className="text-gray-500">Welcome, Dr. Neha Sharma</p>
-          </div>
-          <Button 
-            onClick={() => fetchAppointments()}
-            variant="outline"
-            className="flex items-center gap-2 self-start"
-          >
-            <Calendar className="h-4 w-4" />
-            Refresh Appointments
-          </Button>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Doctor Dashboard</h1>
+          <p className="text-gray-500">Welcome, Dr. Neha Sharma</p>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Pending Appointments
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {appointments.filter(a => a.status === 'pending').length}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Scheduled Today
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {appointments.filter(a => {
-                  const today = new Date().toISOString().split('T')[0];
-                  return a.status === 'scheduled' && 
-                    a.appointment_date.includes(today);
-                }).length}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Appointments
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {appointments.length + pastAppointments.length}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Tabs defaultValue="upcoming" className="w-full">
-          <TabsList>
-            <TabsTrigger value="upcoming">Upcoming Appointments</TabsTrigger>
-            <TabsTrigger value="past">Past Appointments</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="upcoming" className="space-y-4">
-            <Card>
-              <CardContent className="pt-6">
-                {loading ? (
-                  <div className="flex justify-center py-6">Loading appointments...</div>
-                ) : appointments.length === 0 ? (
-                  <div className="text-center py-6 text-muted-foreground">
-                    No upcoming appointments
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Patient</TableHead>
-                        <TableHead>Date & Time</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {appointments.map((appointment) => (
-                        <TableRow key={appointment.id}>
-                          <TableCell className="font-medium">
-                            {appointment.patient_name || 'Patient #' + appointment.user_id.substring(0, 6)}
-                          </TableCell>
-                          <TableCell>
-                            {formatDateTime(appointment.appointment_date)}
-                          </TableCell>
-                          <TableCell>
-                            {getConsultationTypeLabel(appointment.consultation_type)}
-                          </TableCell>
-                          <TableCell>
-                            {getStatusBadge(appointment.status)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              {appointment.status === 'pending' && (
-                                <>
-                                  <Button 
-                                    onClick={() => handleStatusChange(appointment.id, 'scheduled')}
-                                    size="sm" 
-                                    className="bg-green-600 hover:bg-green-700"
-                                  >
-                                    <Check className="mr-1 h-4 w-4" />
-                                    Accept
-                                  </Button>
-                                  <Button 
-                                    onClick={() => handleStatusChange(appointment.id, 'rejected')}
-                                    size="sm"
-                                    variant="destructive"
-                                  >
-                                    <X className="mr-1 h-4 w-4" />
-                                    Reject
-                                  </Button>
-                                </>
-                              )}
-                              {appointment.status === 'scheduled' && (
-                                <Button 
-                                  onClick={() => handleStatusChange(appointment.id, 'completed')}
-                                  size="sm"
-                                >
-                                  Mark Complete
-                                </Button>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="past" className="space-y-4">
-            <Card>
-              <CardContent className="pt-6">
-                {loading ? (
-                  <div className="flex justify-center py-6">Loading appointments...</div>
-                ) : pastAppointments.length === 0 ? (
-                  <div className="text-center py-6 text-muted-foreground">
-                    No past appointments
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Patient</TableHead>
-                        <TableHead>Date & Time</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {pastAppointments.map((appointment) => (
-                        <TableRow key={appointment.id}>
-                          <TableCell className="font-medium">
-                            {appointment.patient_name || 'Patient #' + appointment.user_id.substring(0, 6)}
-                          </TableCell>
-                          <TableCell>
-                            {formatDateTime(appointment.appointment_date)}
-                          </TableCell>
-                          <TableCell>
-                            {getConsultationTypeLabel(appointment.consultation_type)}
-                          </TableCell>
-                          <TableCell>
-                            {getStatusBadge(appointment.status)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        <Button 
+          onClick={() => fetchAppointments()}
+          variant="outline"
+          className="flex items-center gap-2 self-start"
+        >
+          <Calendar className="h-4 w-4" />
+          Refresh Appointments
+        </Button>
       </div>
-    </DashboardLayout>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Pending Appointments
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {appointments.filter(a => a.status === 'pending').length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Scheduled Today
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {appointments.filter(a => {
+                const today = new Date().toISOString().split('T')[0];
+                return a.status === 'scheduled' && 
+                  a.appointment_date.includes(today);
+              }).length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Appointments
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {appointments.length + pastAppointments.length}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="upcoming" className="w-full">
+        <TabsList>
+          <TabsTrigger value="upcoming">Upcoming Appointments</TabsTrigger>
+          <TabsTrigger value="past">Past Appointments</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="upcoming" className="space-y-4">
+          <Card>
+            <CardContent className="pt-6">
+              {loading ? (
+                <div className="flex justify-center py-6">Loading appointments...</div>
+              ) : appointments.length === 0 ? (
+                <div className="text-center py-6 text-muted-foreground">
+                  No upcoming appointments
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Patient</TableHead>
+                      <TableHead>Date & Time</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {appointments.map((appointment) => (
+                      <TableRow key={appointment.id}>
+                        <TableCell className="font-medium">
+                          {appointment.patient_name || 'Patient #' + appointment.user_id.substring(0, 6)}
+                        </TableCell>
+                        <TableCell>
+                          {formatDateTime(appointment.appointment_date)}
+                        </TableCell>
+                        <TableCell>
+                          {getConsultationTypeLabel(appointment.consultation_type)}
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(appointment.status)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            {appointment.status === 'pending' && (
+                              <>
+                                <Button 
+                                  onClick={() => handleStatusChange(appointment.id, 'scheduled')}
+                                  size="sm" 
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  <Check className="mr-1 h-4 w-4" />
+                                  Accept
+                                </Button>
+                                <Button 
+                                  onClick={() => handleStatusChange(appointment.id, 'rejected')}
+                                  size="sm"
+                                  variant="destructive"
+                                >
+                                  <X className="mr-1 h-4 w-4" />
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                            {appointment.status === 'scheduled' && (
+                              <Button 
+                                onClick={() => handleStatusChange(appointment.id, 'completed')}
+                                size="sm"
+                              >
+                                Mark Complete
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="past" className="space-y-4">
+          <Card>
+            <CardContent className="pt-6">
+              {loading ? (
+                <div className="flex justify-center py-6">Loading appointments...</div>
+              ) : pastAppointments.length === 0 ? (
+                <div className="text-center py-6 text-muted-foreground">
+                  No past appointments
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Patient</TableHead>
+                      <TableHead>Date & Time</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pastAppointments.map((appointment) => (
+                      <TableRow key={appointment.id}>
+                        <TableCell className="font-medium">
+                          {appointment.patient_name || 'Patient #' + appointment.user_id.substring(0, 6)}
+                        </TableCell>
+                        <TableCell>
+                          {formatDateTime(appointment.appointment_date)}
+                        </TableCell>
+                        <TableCell>
+                          {getConsultationTypeLabel(appointment.consultation_type)}
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(appointment.status)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 
