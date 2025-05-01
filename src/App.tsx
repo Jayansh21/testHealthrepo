@@ -19,6 +19,7 @@ import DashboardLayout from "./components/DashboardLayout";
 import Welcome from "./pages/Welcome";
 import { DoctorSearchProvider } from "./components/DoctorSearchContext";
 import AuthCallback from "./pages/AuthCallback"; // Import the new AuthCallback component
+import DoctorDashboard from "./pages/DoctorDashboard"; // Import the new DoctorDashboard
 import './App.css'; // Ensure CSS is imported
 
 // Create a new QueryClient instance outside of component render
@@ -82,6 +83,9 @@ const App = () => (
                     <Settings />
                   </DashboardLayout>
                 } />
+                
+                {/* Doctor Dashboard */}
+                <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
                 
                 <Route path="*" element={<NotFound />} />
               </Routes>
