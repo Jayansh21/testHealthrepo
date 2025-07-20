@@ -21,20 +21,35 @@ serve(async (req) => {
   try {
     const { action, sessionId, messages, message } = await req.json();
     
-    // Connect to MongoDB
-    await client.connect(mongoUri);
-    const db = client.database("medassist");
-    const chatCollection = db.collection("chatSessions");
-    
     // Perform different actions based on the request
     switch (action) {
       case 'saveMessage': {
-        // Add a new message to an existing session or create a new one
-        await chatCollection.updateOne(
-          { sessionId },
-          { $push: { messages: message }, $setOnInsert: { createdAt: new Date() }, $set: { updatedAt: new Date() } },
-          { upsert: true }
-        );
+        // Get existing session or create new one
+        const { data: existingSession } = await supabase
+          .from('chat_sessions')
+          .select('messages')
+          .eq('session_id', sessionId)
+          .single();
+
+        let updatedMessages = [];
+        if (existingSession) {
+          updatedMessages = [...existingSession.messages, message];
+          
+          // Update existing session
+          await supabase
+            .from('chat_sessions')
+            .update({ messages: updatedMessages })
+            .eq('session_id', sessionId);
+        } else {
+          // Create new session
+          updatedMessages = [message];
+          await supabase
+            .from('chat_sessions')
+            .insert({ 
+              session_id: sessionId, 
+              messages: updatedMessages 
+            });
+        }
         
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -43,7 +58,11 @@ serve(async (req) => {
       
       case 'getSession': {
         // Retrieve a chat session
-        const session = await chatCollection.findOne({ sessionId });
+        const { data: session } = await supabase
+          .from('chat_sessions')
+          .select('*')
+          .eq('session_id', sessionId)
+          .single();
         
         return new Response(JSON.stringify({ 
           success: true, 
@@ -55,11 +74,27 @@ serve(async (req) => {
       
       case 'saveSession': {
         // Save full session (used when initializing with existing messages)
-        await chatCollection.updateOne(
-          { sessionId },
-          { $set: { messages, updatedAt: new Date() }, $setOnInsert: { createdAt: new Date() } },
-          { upsert: true }
-        );
+        const { data: existingSession } = await supabase
+          .from('chat_sessions')
+          .select('id')
+          .eq('session_id', sessionId)
+          .single();
+
+        if (existingSession) {
+          // Update existing session
+          await supabase
+            .from('chat_sessions')
+            .update({ messages })
+            .eq('session_id', sessionId);
+        } else {
+          // Create new session
+          await supabase
+            .from('chat_sessions')
+            .insert({ 
+              session_id: sessionId, 
+              messages 
+            });
+        }
         
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -68,7 +103,10 @@ serve(async (req) => {
       
       case 'endSession': {
         // Delete the session when chat ends
-        await chatCollection.deleteOne({ sessionId });
+        await supabase
+          .from('chat_sessions')
+          .delete()
+          .eq('session_id', sessionId);
         
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -90,12 +128,5 @@ serve(async (req) => {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } finally {
-    // Ensure MongoDB connection is closed
-    try {
-      await client.close();
-    } catch (e) {
-      console.error('Error closing MongoDB connection:', e);
-    }
   }
 });

@@ -63,7 +63,7 @@ const ChatbotInterface = ({ closeChat }: ChatbotInterfaceProps) => {
       
       // Try to retrieve any previous session
       try {
-        const { data, error } = await supabase.functions.invoke('mongodb-chat', {
+        const { data, error } = await supabase.functions.invoke('supabase-chat', {
           body: { 
             action: 'getSession', 
             sessionId: newSessionId 
@@ -79,8 +79,8 @@ const ChatbotInterface = ({ closeChat }: ChatbotInterfaceProps) => {
         if (data.data.messages && data.data.messages.length > 0) {
           setMessages(data.data.messages);
         } else if (initialMessages.length > 0) {
-          // Otherwise, save our initial message to MongoDB
-          await supabase.functions.invoke('mongodb-chat', {
+          // Otherwise, save our initial message to Supabase
+          await supabase.functions.invoke('supabase-chat', {
             body: { 
               action: 'saveSession',
               sessionId: newSessionId,
@@ -114,10 +114,10 @@ const ChatbotInterface = ({ closeChat }: ChatbotInterfaceProps) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Save a message to MongoDB
-  const saveMessageToMongoDB = async (message: Message) => {
+  // Save a message to Supabase
+  const saveMessageToSupabase = async (message: Message) => {
     try {
-      await supabase.functions.invoke('mongodb-chat', {
+      await supabase.functions.invoke('supabase-chat', {
         body: { 
           action: 'saveMessage', 
           sessionId,
@@ -125,14 +125,14 @@ const ChatbotInterface = ({ closeChat }: ChatbotInterfaceProps) => {
         }
       });
     } catch (error) {
-      console.error('Error saving message to MongoDB:', error);
+      console.error('Error saving message to Supabase:', error);
     }
   };
 
-  // End the chat and clean up MongoDB session
+  // End the chat and clean up Supabase session
   const endChat = async () => {
     try {
-      await supabase.functions.invoke('mongodb-chat', {
+      await supabase.functions.invoke('supabase-chat', {
         body: { 
           action: 'endSession', 
           sessionId
@@ -177,7 +177,7 @@ const ChatbotInterface = ({ closeChat }: ChatbotInterfaceProps) => {
     setIsLoading(true);
     
     // Save user message to MongoDB
-    await saveMessageToMongoDB(userMessage);
+    await saveMessageToSupabase(userMessage);
 
     try {
       // Extract previous messages for context (limit to last 10 for performance)
@@ -209,7 +209,7 @@ const ChatbotInterface = ({ closeChat }: ChatbotInterfaceProps) => {
       setMessages((prev) => [...prev, botMessage]);
       
       // Save bot message to MongoDB
-      await saveMessageToMongoDB(botMessage);
+      await saveMessageToSupabase(botMessage);
       
     } catch (error) {
       console.error('Error getting response:', error);
@@ -228,7 +228,7 @@ const ChatbotInterface = ({ closeChat }: ChatbotInterfaceProps) => {
       };
       
       setMessages((prev) => [...prev, errorMessage]);
-      await saveMessageToMongoDB(errorMessage);
+      await saveMessageToSupabase(errorMessage);
     } finally {
       setIsLoading(false);
       // Reset textarea height
