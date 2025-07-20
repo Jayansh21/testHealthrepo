@@ -37,8 +37,7 @@ const ChatbotButton = () => {
           </ChatContent>
         ) : (
           <ChatContent 
-            className="p-0 overflow-hidden sm:max-w-[400px]" 
-            side="right"
+            className="p-0 overflow-hidden sm:max-w-[400px]"
           >
             <ChatbotInterface closeChat={() => setIsOpen(false)} />
           </ChatContent>
