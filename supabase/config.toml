@@ -132,11 +132,11 @@ redirect_uri = ""
 additional_redirect_urls = []
 
 [auth.external.google]
-enabled = true
-client_id = "714263014463-ohefh7t5fd8nms54bcqr2vpn9g6eca7s.apps.googleusercontent.com"
-secret = "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"
-redirect_uri = "https://personalized-health-tracker-and-advisior.vercel.app/auth/callback"
-additional_redirect_urls = ["http://localhost:3000/auth/callback"]
+enabled = false
+client_id = ""
+secret = ""
+redirect_uri = ""
+additional_redirect_urls = []
 
 [auth.external.keycloak]
 enabled = false
